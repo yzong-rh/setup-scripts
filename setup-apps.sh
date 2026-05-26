@@ -63,13 +63,11 @@ ensure_login_shell_sources_bashrc
 mkdir -p "$HOME/.bashrc.d"
 ensure_bashrc_d_loader
 
-shopt -s nullglob
 for bashrc_snippet in "$bashrc_dir"/*; do
   if [[ -f "$bashrc_snippet" ]]; then
     install -m 0644 "$bashrc_snippet" "$HOME/.bashrc.d/$(basename "$bashrc_snippet")"
   fi
 done
-shopt -u nullglob
 
 git config --global user.email "yzong@redhat.com"
 git config --global user.name "Yifan Zong"
