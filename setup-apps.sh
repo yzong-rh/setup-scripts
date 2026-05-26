@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-git config pull.rebase true
-
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 bashrc_dir="$script_dir/.bashrc.d"
 
