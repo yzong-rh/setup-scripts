@@ -1,9 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+readonly IMAGE="localhost/vllm-system:latest"
+readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+image_id() {
+  podman image inspect --format '{{.Id}}' "$1"
+}
+
+old_image_id=""
+if podman image exists "$IMAGE" &>/dev/null; then
+  old_image_id="$(image_id "$IMAGE")"
+fi
+
 podman build \
-  -t localhost/vllm-system:latest \
-  .
+  -t "$IMAGE" \
+  --file "${SCRIPT_DIR}/Containerfile" \
+  "${SCRIPT_DIR}"
+
+new_image_id="$(image_id "$IMAGE")"
 
 secret_exists() {
   podman secret exists "$1" &>/dev/null
@@ -64,3 +79,8 @@ create_secret_from_stdin gh-read-token "GH_READONLY_TOKEN: "
 create_secret_from_stdin hf-read-token "HF_READ_TOKEN: "
 create_secret_from_file gcp-vertex-adc "ADC JSON path" \
   "${HOME}/.config/gcloud/application_default_credentials.json"
+
+if [[ -n "$old_image_id" && "$old_image_id" != "$new_image_id" ]] && \
+  ! podman rmi "$old_image_id"; then
+  echo "Warning: could not remove previous image '${old_image_id}'." >&2
+fi
