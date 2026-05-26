@@ -99,7 +99,7 @@ podman_args=(
   -e HF_TOKEN_PATH=/run/secrets/hf_token
   -e GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp_adc.json
   -v "$HOME_VOLUME":"${CONTAINER_HOME}":U
-  -v "${CACHE_DIR}:/shared-cache"
+  -v "${CACHE_DIR}:/shared-cache:z"
 )
 
 if [[ "$USE_GPU" == true ]]; then
