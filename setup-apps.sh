@@ -71,6 +71,9 @@ for bashrc_snippet in "$bashrc_dir"/*; do
 done
 shopt -u nullglob
 
+git config --global user.email "yzong@redhat.com"
+git config --global user.name "Yifan Zong"
+
 bash "$script_dir/ripgrep/install.sh"
 
 bash "$script_dir/vllm/install.sh"
