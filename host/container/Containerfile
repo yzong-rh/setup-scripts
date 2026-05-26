@@ -1,0 +1,22 @@
+FROM docker.io/pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel
+
+ENV HOME=/home/dev
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    jq \
+    less \
+    rsync \
+    tmux \
+    gh \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p "${HOME}" /shared-cache
+
+ENV HF_HUB_CACHE=/shared-cache
+WORKDIR ${HOME}
+
+CMD ["/bin/bash"]
