@@ -9,7 +9,7 @@ if [[ -e "$repo_dir" ]]; then
   exit 0
 fi
 
-gh repo clone vllm-project/vllm "$repo_dir"
+git clone "https://github.com/vllm-project/vllm.git" "$repo_dir"
 
 cd "$repo_dir"
 uv venv --python 3.12 --seed --managed-python
