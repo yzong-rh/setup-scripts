@@ -2,6 +2,8 @@ FROM docker.io/pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel
 
 ENV HOME=/home/dev
 
+ARG NODE_VERSION=24.16.0
+
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     curl \
     git \
@@ -10,9 +12,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     rsync \
     tmux \
     gh \
-    nodejs \
-    npm \
     && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
+      | tar -xJf - -C /usr/local --strip-components=1 --no-same-owner
 
 RUN mkdir -p "${HOME}" /shared-cache
 

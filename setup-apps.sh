@@ -17,6 +17,8 @@ for bashrc_snippet in "$bashrc_dir"/*; do
 done
 shopt -u nullglob
 
+bash "$script_dir/ripgrep/install.sh"
+
 bash "$script_dir/vllm/install.sh"
 
 bash "$script_dir/neovim/install.sh"
