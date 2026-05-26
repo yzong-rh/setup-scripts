@@ -22,7 +22,8 @@ Options:
 
 Environment:
   CACHE_DIR            Host directory bind-mounted at /shared-cache
-  CUDA_VISIBLE_DEVICES   Selects which GPUs to use when -g is passed
+  CUDA_VISIBLE_DEVICES   Host-side GPU selector when -g is passed.
+                         If unset, no GPUs are passed through.
 
 Examples:
   $(basename "$0") reviewer-a
@@ -103,9 +104,20 @@ podman_args=(
 )
 
 if [[ "$USE_GPU" == true ]]; then
-  podman_args+=(--device nvidia.com/gpu=all)
-  [[ -n "${CUDA_VISIBLE_DEVICES:-}" ]] && \
-    podman_args+=(-e "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}")
+  if [[ -n "${CUDA_VISIBLE_DEVICES:-}" ]]; then
+    # Rootless GPU access on this host needs SELinux labeling disabled.
+    podman_args+=(--security-opt label=disable)
+    IFS=',' read -r -a requested_gpus <<<"${CUDA_VISIBLE_DEVICES}"
+
+    for gpu in "${requested_gpus[@]}"; do
+      gpu="${gpu//[[:space:]]/}"
+      [[ -n "$gpu" ]] || die "CUDA_VISIBLE_DEVICES contains an empty GPU entry"
+
+      podman_args+=(--device "nvidia.com/gpu=${gpu}")
+    done
+  else
+    echo "warning: --gpu requested but CUDA_VISIBLE_DEVICES is unset; not passing any GPUs" >&2
+  fi
 fi
 [[ -n "$HOST_SERVICE_PORT" ]] && \
   podman_args+=(-e "HOST_SERVICE_URL=http://host.containers.internal:${HOST_SERVICE_PORT}")
