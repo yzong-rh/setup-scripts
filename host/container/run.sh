@@ -95,6 +95,7 @@ podman_args=(
   --secret "source=${HF_SECRET_NAME},type=mount,target=hf_token,uid=${CONTAINER_UID},gid=${CONTAINER_GID},mode=0400"
   --secret "source=${GCP_SECRET_NAME},type=mount,target=gcp_adc.json,uid=${CONTAINER_UID},gid=${CONTAINER_GID},mode=0400"
   -e POD_NAME="$POD_NAME"
+  -e TERM=xterm-256color
   -e HOME="${CONTAINER_HOME}"
   -e HF_HUB_CACHE=/shared-cache
   -e HF_TOKEN_PATH=/run/secrets/hf_token
