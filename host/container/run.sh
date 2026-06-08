@@ -5,6 +5,15 @@ readonly IMAGE="localhost/vllm-system:latest"
 readonly GH_SECRET_NAME="gh-read-token"
 readonly HF_SECRET_NAME="hf-read-token"
 readonly GCP_SECRET_NAME="gcp-vertex-adc"
+readonly -a CONTAINER_SHELL_CMD=(
+  bash -lc '
+    set -euo pipefail
+
+    export GH_TOKEN="$(< /run/secrets/gh_token)"
+
+    exec bash -l
+  '
+)
 
 usage() {
   cat <<EOF
@@ -16,8 +25,10 @@ is shared across pods.
 
 Options:
   -g, --gpu              Pass NVIDIA GPUs into the container
-  -p, --host-port PORT   Set HOST_SERVICE_URL (http://host.containers.internal:PORT).
-                         The host service must listen on 0.0.0.0, not 127.0.0.1.
+  -H, --host-access      Allow the container to reach host services at
+                         http://host.containers.internal:PORT. Sets
+                         HOST_SERVICE_HOST; host services must listen on
+                         0.0.0.0, not 127.0.0.1.
   -h, --help             Show this help and exit
 
 Environment:
@@ -28,7 +39,7 @@ Environment:
 Examples:
   $(basename "$0") reviewer-a
   CUDA_VISIBLE_DEVICES=0 $(basename "$0") -g worker-1
-  $(basename "$0") -g -p 8081 pod-2
+  $(basename "$0") -H reviewer-a
 
 Prerequisites:
   Image:   ${IMAGE}  (./build.sh)
@@ -41,9 +52,13 @@ die() {
   exit 1
 }
 
+pod_running() {
+  [[ "$(podman container inspect "$CONTAINER_NAME" --format '{{.State.Running}}' 2>/dev/null || echo false)" == true ]]
+}
+
 POD_NAME=""
-HOST_SERVICE_PORT=""
 USE_GPU=false
+HOST_ACCESS=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -55,10 +70,9 @@ while [[ $# -gt 0 ]]; do
       USE_GPU=true
       shift
       ;;
-    -p | --host-port)
-      [[ $# -ge 2 && -n "${2:-}" ]] || die "--host-port requires a port number"
-      HOST_SERVICE_PORT="$2"
-      shift 2
+    -H | --host-access)
+      HOST_ACCESS=true
+      shift
       ;;
     -*)
       die "unknown option: $1 (try --help)"
@@ -120,18 +134,16 @@ if [[ "$USE_GPU" == true ]]; then
     echo "warning: --gpu requested but CUDA_VISIBLE_DEVICES is unset; not passing any GPUs" >&2
   fi
 fi
-[[ -n "$HOST_SERVICE_PORT" ]] && \
-  podman_args+=(-e "HOST_SERVICE_URL=http://host.containers.internal:${HOST_SERVICE_PORT}")
-
+if [[ "$HOST_ACCESS" == true ]]; then
+  podman_args+=(-e HOST_SERVICE_HOST=host.containers.internal)
+fi
 mkdir -p "$CACHE_DIR"
 if ! podman volume exists "$HOME_VOLUME" &>/dev/null; then
   podman volume create "$HOME_VOLUME" >/dev/null
 fi
 
-podman run "${podman_args[@]}" "$IMAGE" bash -lc '
-  set -euo pipefail
+if pod_running; then
+  exec podman exec -it "$CONTAINER_NAME" "${CONTAINER_SHELL_CMD[@]}"
+fi
 
-  export GH_TOKEN="$(< /run/secrets/gh_token)"
-
-  exec bash -l
-'
+podman run "${podman_args[@]}" "$IMAGE" "${CONTAINER_SHELL_CMD[@]}"
