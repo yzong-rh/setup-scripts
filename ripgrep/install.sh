@@ -13,15 +13,16 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf -- "$tmp_dir"' EXIT
 
 version="$(
-  curl -fsSL https://api.github.com/repos/BurntSushi/ripgrep/releases/latest \
-    | sed -n 's/.*"tag_name": "\([^"]*\)".*/\1/p' \
-    | head -1
+  curl -fsSLI -A "setup-scripts" -o /dev/null -w '%{url_effective}' \
+    https://github.com/BurntSushi/ripgrep/releases/latest
 )"
+version="${version%/}"
+version="${version##*/}"
 
 archive="ripgrep-${version}-x86_64-unknown-linux-musl.tar.gz"
 extract_dir="ripgrep-${version}-x86_64-unknown-linux-musl"
 
-curl -fL --retry 3 \
+curl -fL --retry 3 -A "setup-scripts" \
   "https://github.com/BurntSushi/ripgrep/releases/download/${version}/${archive}" \
   -o "$tmp_dir/${archive}"
 
