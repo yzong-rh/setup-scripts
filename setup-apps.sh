@@ -76,6 +76,8 @@ bash "$script_dir/ripgrep/install.sh"
 
 bash "$script_dir/vllm/install.sh"
 
+bash "$script_dir/vllm-omni/install.sh"
+
 bash "$script_dir/neovim/install.sh"
 
 bash "$script_dir/pi/install.sh"
